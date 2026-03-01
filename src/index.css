@@ -1,0 +1,101 @@
+@import "tailwindcss";
+
+/* ─── Touch & Scroll Prevention ──────────────────────────────────────────────
+   Prevents accidental double-tap zoom, page scroll, and text selection
+   while players aggressively tap on mobile. */
+html,
+body,
+#root {
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+    height: 100%;
+    width: 100%;
+}
+
+/* ─── Line Clear Flash Animation ─────────────────────────────────────────────
+   Quick white-out flash before rows are removed from the board. */
+@keyframes rowFlash {
+    0% {
+        opacity: 1;
+        filter: brightness(1) saturate(1);
+    }
+
+    30% {
+        opacity: 0.3;
+        filter: brightness(4) saturate(0);
+    }
+
+    70% {
+        opacity: 0.3;
+        filter: brightness(4) saturate(0);
+    }
+
+    100% {
+        opacity: 1;
+        filter: brightness(1) saturate(1);
+    }
+}
+
+.animate-row-flash {
+    animation: rowFlash 0.22s ease-in-out both;
+}
+
+/* ─── Game Over Modal Bounce-In ──────────────────────────────────────────────
+   Fade + scale bounce entrance for the game-over overlay content. */
+@keyframes fadeInBounce {
+    0% {
+        opacity: 0;
+        transform: scale(0.8) translateY(16px);
+    }
+
+    55% {
+        opacity: 1;
+        transform: scale(1.05) translateY(-4px);
+    }
+
+    80% {
+        transform: scale(0.97) translateY(2px);
+    }
+
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.animate-fade-in-bounce {
+    animation: fadeInBounce 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+/* ─── Start Screen Pulsing Glow ──────────────────────────────────────────────*/
+@keyframes titlePulse {
+
+    0%,
+    100% {
+        text-shadow:
+            0 0 20px #00f0ffaa,
+            0 0 60px #00f0ff33;
+    }
+
+    50% {
+        text-shadow:
+            0 0 35px #00f0ffcc,
+            0 0 90px #00f0ff55;
+    }
+}
+
+.animate-title-pulse {
+    animation: titlePulse 2.5s ease-in-out infinite;
+}
+
+/* ─── Mobile Gamepad Buttons ─────────────────────────────────────────────────
+   Suppressed tap highlights and native touch feedback for custom buttons. */
+.gamepad-btn {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: none;
+    user-select: none;
+    -webkit-user-select: none;
+}
