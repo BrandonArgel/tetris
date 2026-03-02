@@ -38,21 +38,21 @@ describe('levelFromLines', () => {
         expect(levelFromLines(0)).toBe(1)
     })
 
-    it('stays at level 1 up to 9 lines', () => {
-        expect(levelFromLines(9)).toBe(1)
+    it('stays at level 1 up to 7 lines', () => {
+        expect(levelFromLines(7)).toBe(1)
     })
 
-    it('advances to level 2 at 10 lines', () => {
-        expect(levelFromLines(10)).toBe(2)
+    it('advances to level 2 at 8 lines', () => {
+        expect(levelFromLines(8)).toBe(2)
     })
 
-    it('advances to level 10 at 90 lines', () => {
-        expect(levelFromLines(90)).toBe(10)
+    it('advances to level 10 at 72 lines', () => {
+        expect(levelFromLines(72)).toBe(10)
     })
 
-    it('advances every 10 lines', () => {
+    it('advances every 8 lines', () => {
         for (let i = 1; i <= 10; i++) {
-            expect(levelFromLines(i * 10)).toBe(i + 1)
+            expect(levelFromLines(i * 8)).toBe(i + 1)
         }
     })
 })

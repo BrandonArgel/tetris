@@ -8,9 +8,9 @@ export function computeScore(linesCleared: number, level: number): number {
     return points * level
 }
 
-/** Level advances every 10 lines. Minimum level is 1. */
+/** Level advances every 8 lines. Minimum level is 1. */
 export function levelFromLines(totalLines: number): number {
-    return Math.floor(totalLines / 10) + 1
+    return Math.floor(totalLines / 8) + 1
 }
 
 /**

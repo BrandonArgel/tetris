@@ -32,10 +32,10 @@ interface GamepadButtonProps {
     label: string
     onAction: () => void
     variant?: 'gamepad' | 'gamepad-action' | 'gamepad-primary'
-    /** Pixel size passed to the square Button */
     sizePx?: number
     className?: string
     disabled?: boolean
+    style?: React.CSSProperties
 }
 
 const GamepadButton = memo(function GamepadButton({
@@ -44,9 +44,10 @@ const GamepadButton = memo(function GamepadButton({
     label,
     onAction,
     variant = 'gamepad',
-    sizePx = 56,
+    sizePx = 60,
     className,
     disabled,
+    style,
 }: GamepadButtonProps) {
     /** onTouchStart fires instantly — bypasses the 300 ms click delay */
     const handleTouchStart = useCallback(
@@ -75,7 +76,7 @@ const GamepadButton = memo(function GamepadButton({
             size="icon"
             aria-label={label}
             className={cn('gamepad-btn active:scale-90 rounded-xl', className)}
-            style={{ width: sizePx, height: sizePx }}
+            style={{ width: sizePx, height: sizePx, touchAction: 'none', ...style }}
             onTouchStart={handleTouchStart}
             onPointerDown={handlePointerDown}
             onContextMenu={e => e.preventDefault()}
@@ -89,72 +90,118 @@ const GamepadButton = memo(function GamepadButton({
 // ─── MobileGamepad ────────────────────────────────────────────────────────────
 
 /**
- * Ergonomic on-screen gamepad for two-thumb play.
+ * Ergonomic on-screen gamepad using CSS Grid for precise thumb placement.
  *
- *  Left thumb        │ Centre │  Right thumb
- *  ────────────────────────────────────────
- *  [ ← ]             │  [ ⏸ ] │  [ ↻ Rotate    ]
- *  [ ↓ Soft ] [ → ]  │        │  [ ⬇ Hard Drop  ]
+ * Left thumb  ── D-Pad (3-col grid)   │  Right thumb ── Actions (2-col grid)
+ * ─────────────────────────────────────────────────────────────────────────────
+ *  [ ← ]  [   ]  [ → ]                │  [   ]  [ ↻ Rotate   ]
+ *  [   ]  [ ↓ ]  [   ]                │  [ ⬇ Hard Drop   ]  [  ]
+ *
+ * The centre cell of the D-Pad is intentionally empty so arrows feel like a
+ * cohesive cross. Hard Drop spans two columns for a bigger, easier target.
  */
 export const MobileGamepad = memo(function MobileGamepad({
     actions,
     isPaused,
 }: MobileGamepadProps) {
+    const BTN = 60   // px — button size
+    const GAP = 8    // px — gap between buttons
+
     return (
         <div
-            className="fixed bottom-0 left-0 right-0 z-20 flex items-end justify-between px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-3"
+            className="w-full shrink-0 z-20 flex items-end justify-between px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-3"
             style={{ background: 'linear-gradient(to top, rgba(3,7,18,0.98) 60%, transparent)' }}
         >
             {/* ── Left cluster: D-pad ─────────────────────────────────────── */}
-            <div className="flex flex-col items-start gap-2.5">
+            {/*
+             *  Grid layout (3 × 2):
+             *    Col1     Col2    Col3
+             *  [ ← ]    [    ]  [ → ]
+             *  [    ]   [ ↓  ]  [   ]
+             */}
+            <div
+                className="grid"
+                style={{
+                    gridTemplateColumns: `repeat(3, ${BTN}px)`,
+                    gridTemplateRows: `repeat(2, ${BTN}px)`,
+                    gap: GAP,
+                }}
+            >
+                {/* Left  — row 1, col 1 */}
                 <GamepadButton
                     id="gp-left"
                     icon={<ArrowLeft size={22} strokeWidth={2.5} />}
                     label="Move left"
                     onAction={actions.moveLeft}
-                    sizePx={60}
+                    sizePx={BTN}
                     disabled={isPaused}
+                    className="[grid-area:1/1]"
                 />
-                <div className="flex gap-2.5">
-                    <GamepadButton
-                        id="gp-down"
-                        icon={<ArrowDown size={22} strokeWidth={2.5} />}
-                        label="Soft drop"
-                        onAction={actions.softDrop}
-                        sizePx={60}
-                        disabled={isPaused}
-                    />
-                    <GamepadButton
-                        id="gp-right"
-                        icon={<ArrowRight size={22} strokeWidth={2.5} />}
-                        label="Move right"
-                        onAction={actions.moveRight}
-                        sizePx={60}
-                        disabled={isPaused}
-                    />
-                </div>
+
+                {/* Right — row 1, col 3 */}
+                <GamepadButton
+                    id="gp-right"
+                    icon={<ArrowRight size={22} strokeWidth={2.5} />}
+                    label="Move right"
+                    onAction={actions.moveRight}
+                    sizePx={BTN}
+                    disabled={isPaused}
+                    className="[grid-area:1/3]"
+                />
+
+                {/* Down (Soft Drop) — row 2, col 2 */}
+                <GamepadButton
+                    id="gp-down"
+                    icon={<ArrowDown size={22} strokeWidth={2.5} />}
+                    label="Soft drop"
+                    onAction={actions.softDrop}
+                    sizePx={BTN}
+                    disabled={isPaused}
+                    className="[grid-area:2/2]"
+                />
             </div>
 
             {/* ── Right cluster: action buttons ────────────────────────────── */}
-            <div className="flex flex-col items-end gap-2.5">
+            {/*
+             *  Grid layout (2 × 2):
+             *    Col1              Col2
+             *  [        ]        [ ↻ Rotate ]
+             *  [ ⬇ Hard Drop (col-span 2)   ]
+             */}
+            <div
+                className="grid"
+                style={{
+                    gridTemplateColumns: `repeat(2, ${BTN}px)`,
+                    gridTemplateRows: `repeat(2, ${BTN}px)`,
+                    gap: GAP,
+                }}
+            >
+                {/* Rotate — row 1, col 2 (right-hand, natural thumb reach) */}
                 <GamepadButton
                     id="gp-rotate"
                     icon={<RefreshCw size={22} strokeWidth={2.5} />}
                     label="Rotate"
                     onAction={actions.rotate}
                     variant="gamepad-action"
-                    sizePx={60}
+                    sizePx={BTN}
                     disabled={isPaused}
+                    className="[grid-area:1/2]"
                 />
-                <GamepadButton
-                    id="gp-harddrop"
-                    icon={<ChevronsDown size={22} strokeWidth={2.5} />}
-                    label="Hard drop"
-                    onAction={actions.hardDrop}
-                    variant="gamepad-primary"
-                    sizePx={60}
-                    disabled={isPaused}
-                />
+
+                {/* Hard Drop — row 2, spans both columns (wide target) */}
+                <div className="[grid-area:2/1/3/3]">
+                    <GamepadButton
+                        id="gp-harddrop"
+                        icon={<ChevronsDown size={22} strokeWidth={2.5} />}
+                        label="Hard drop"
+                        onAction={actions.hardDrop}
+                        variant="gamepad-primary"
+                        sizePx={BTN}
+                        disabled={isPaused}
+                        className="w-full rounded-xl"
+                        style={{ width: BTN * 2 + GAP, height: BTN } as React.CSSProperties}
+                    />
+                </div>
             </div>
         </div>
     )

@@ -1,18 +1,21 @@
-import { useEffect, useCallback } from 'react'
+import { useEffect, useCallback, useState, useRef } from 'react'
 import {
   Volume2,
   VolumeX,
   Pause,
   Play,
+  Trophy,
 } from 'lucide-react'
 import { useTetris } from '@/hooks/useTetris'
 import { useSoundManager } from '@/hooks/useSoundManager'
-import { useBoardSize } from '@/hooks/useBoardSize'
+import { useLeaderboard } from '@/hooks/useLeaderboard'
 import { Board } from '@/components/Board'
 import { NextPiece } from '@/components/NextPiece'
 import { HUD } from '@/components/HUD'
 import { GameOverlay } from '@/components/GameOverlay'
 import { MobileGamepad } from '@/components/MobileGamepad'
+import { LeaderboardModal } from '@/components/LeaderboardModal'
+import { InitialsPrompt } from '@/components/InitialsPrompt'
 import { Button } from '@/components/ui/Button'
 import type { GamepadActions } from '@/components/MobileGamepad'
 import { useIsTouchDevice } from '@/hooks/useIsTouchDevice'
@@ -28,7 +31,23 @@ function dispatchKey(key: string): void {
 export default function App() {
   const { play, muted, toggleMute } = useSoundManager()
   const { gameState, visualBoard, startGame, togglePause } = useTetris({ playSound: play })
-  const { cellSize } = useBoardSize()
+  const leaderboard = useLeaderboard()
+
+  // ── UI state ──────────────────────────────────────────────────────────────
+
+  const [showLeaderboard, setShowLeaderboard] = useState(false)
+  /** Set when a name has been submitted; used to highlight the new rank. */
+  const [newEntryRank, setNewEntryRank] = useState<number | undefined>(undefined)
+  /** Controls the name-entry dialog. Shown on Game Over when score qualifies. */
+  const [promptingInitials, setPromptingInitials] = useState(false)
+
+  /**
+   * Track whether we paused the game to show a modal, so we can auto-resume
+   * when the modal closes. We use a ref instead of state to avoid re-renders.
+   */
+  const pausedForModalRef = useRef(false)
+
+  // ── Derived ───────────────────────────────────────────────────────────────
 
   const isGameInProgress =
     gameState.status === 'playing' ||
@@ -38,7 +57,60 @@ export default function App() {
   const isPaused = gameState.status === 'paused'
   const showGamepad = useIsTouchDevice()
 
-  // Enter key → start game from idle / game-over
+  // ── Game-over → high-score check ─────────────────────────────────────────
+
+  useEffect(() => {
+    if (gameState.status === 'gameover' && leaderboard.isHighScore(gameState.score)) {
+      setPromptingInitials(true)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gameState.status])          // intentionally only re-runs on status change
+
+  // ── Handle name submission ────────────────────────────────────────────────
+
+  const handleInitialsSubmit = useCallback(
+    (name: string) => {
+      const updated = leaderboard.addEntry({
+        initials: name,
+        score: gameState.score,
+        level: gameState.level,
+        lines: gameState.lines,
+      })
+      setPromptingInitials(false)
+
+      // Find the rank of the new entry so we can highlight it in the modal
+      const rank = updated.findIndex(e => e.initials === name && e.score === gameState.score)
+      setNewEntryRank(rank >= 0 ? rank : undefined)
+      setShowLeaderboard(true)
+    },
+    [leaderboard, gameState.score, gameState.level, gameState.lines],
+  )
+
+  // ── Leaderboard open/close with auto-pause ────────────────────────────────
+
+  const openLeaderboard = useCallback(() => {
+    setNewEntryRank(undefined)
+    // Auto-pause if game is actively running
+    if (gameState.status === 'playing') {
+      togglePause()
+      pausedForModalRef.current = true
+    } else {
+      pausedForModalRef.current = false
+    }
+    setShowLeaderboard(true)
+  }, [gameState.status, togglePause])
+
+  const closeLeaderboard = useCallback(() => {
+    setShowLeaderboard(false)
+    // Auto-resume if we paused on open
+    if (pausedForModalRef.current) {
+      pausedForModalRef.current = false
+      togglePause()
+    }
+  }, [togglePause])
+
+  // ── Enter → start game ────────────────────────────────────────────────────
+
   useEffect(() => {
     const handle = (e: KeyboardEvent) => {
       if (e.key === 'Enter' && (gameState.status === 'idle' || gameState.status === 'gameover')) {
@@ -49,7 +121,8 @@ export default function App() {
     return () => window.removeEventListener('keydown', handle)
   }, [gameState.status, startGame])
 
-  // Gamepad actions → dispatched as keyboard events so useTetris handles them
+  // ── Gamepad actions ───────────────────────────────────────────────────────
+
   const gamepadActions: GamepadActions = {
     moveLeft: useCallback(() => dispatchKey('ArrowLeft'), []),
     moveRight: useCallback(() => dispatchKey('ArrowRight'), []),
@@ -58,10 +131,20 @@ export default function App() {
     hardDrop: useCallback(() => dispatchKey(' '), []),
   }
 
-  // Board pixel dimensions
-  const MOBILE_CHROME = 208
-  const boardH = cellSize * 20
-  const boardW = cellSize * 10
+  // ─── Shared Trophy button fragment ─────────────────────────────────────────
+
+  const TrophyButton = ({ id, size: iconSize = 16 }: { id: string; size?: number }) => (
+    <Button
+      id={id}
+      variant="ghost"
+      size="icon"
+      onClick={openLeaderboard}
+      title="Leaderboard"
+      aria-label="Open leaderboard"
+    >
+      <Trophy size={iconSize} strokeWidth={2.5} />
+    </Button>
+  )
 
   return (
     <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-gray-950 font-sans">
@@ -73,7 +156,7 @@ export default function App() {
       </div>
 
       {showGamepad ? (
-        // ── MOBILE ─────────────────────────────────────────────────────────
+        // ── MOBILE ───────────────────────────────────────────────────────────
         <>
           {/* Header */}
           <header
@@ -94,10 +177,11 @@ export default function App() {
               TETRIS
             </span>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <span className="text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
                 LV {gameState.level}
               </span>
+              <TrophyButton id="trophy-btn-mobile" />
               {isGameInProgress && (
                 <Button
                   id="pause-btn-mobile"
@@ -127,13 +211,10 @@ export default function App() {
             </div>
           </header>
 
-          {/* Board */}
-          <main
-            className="relative flex flex-1 items-center justify-center overflow-hidden"
-            style={{ maxHeight: `calc(100dvh - ${MOBILE_CHROME}px)` }}
-          >
-            <div className="relative" style={{ width: boardW, height: boardH }}>
-              <Board board={visualBoard} cellSize={cellSize} clearingRows={gameState.clearingRows} />
+          {/* Board — fills remaining space between header and gamepad */}
+          <main className="relative flex-1 min-h-0 flex items-center justify-center p-2">
+            <div className="relative flex h-full max-h-full aspect-[10/20] items-center justify-center">
+              <Board board={visualBoard} clearingRows={gameState.clearingRows} />
               <GameOverlay status={gameState.status} score={gameState.score} onStart={startGame} onPause={togglePause} />
             </div>
           </main>
@@ -141,12 +222,12 @@ export default function App() {
           <MobileGamepad actions={gamepadActions} isPaused={isPaused} />
         </>
       ) : (
-        // ── DESKTOP ─────────────────────────────────────────────────────────
+        // ── DESKTOP ──────────────────────────────────────────────────────────
         <main className="relative flex flex-1 items-center justify-center gap-6 overflow-hidden p-4">
 
-          {/* Playfield */}
-          <div className="relative shrink-0" style={{ width: boardW, height: boardH }}>
-            <Board board={visualBoard} cellSize={cellSize} clearingRows={gameState.clearingRows} />
+          {/* Playfield — board grows to fill available height */}
+          <div className="relative flex h-full items-center justify-center">
+            <Board board={visualBoard} clearingRows={gameState.clearingRows} />
             <GameOverlay status={gameState.status} score={gameState.score} onStart={startGame} onPause={togglePause} />
           </div>
 
@@ -168,6 +249,19 @@ export default function App() {
               <span className="text-xs font-semibold tracking-[0.2em] text-gray-400 uppercase">Next</span>
               <NextPiece piece={gameState.nextPiece} />
             </div>
+
+            {/* Leaderboard */}
+            <Button
+              id="trophy-button"
+              variant="ghost"
+              size="sm"
+              onClick={openLeaderboard}
+              className="w-full gap-2 font-bold tracking-widest uppercase"
+              title="Leaderboard"
+            >
+              <Trophy size={14} strokeWidth={2.5} />
+              <span>Ranks</span>
+            </Button>
 
             {/* Pause */}
             {isGameInProgress && (
@@ -199,18 +293,26 @@ export default function App() {
                 ? <><VolumeX size={14} strokeWidth={2.5} /><span>Muted</span></>
                 : <><Volume2 size={14} strokeWidth={2.5} /><span>Sound</span></>}
             </Button>
-
-            {/* Keyboard hints */}
-            {isGameInProgress && (
-              <div className="space-y-0.5 text-center text-xs text-gray-600">
-                <p>↑ Rotate · ↓ Drop</p>
-                <p>Space Hard Drop</p>
-                <p>Esc / P Pause</p>
-              </div>
-            )}
           </div>
         </main>
       )}
+
+      {/* ── Leaderboard Modal (shared between mobile & desktop) ───────────── */}
+      <LeaderboardModal
+        entries={leaderboard.entries}
+        isOpen={showLeaderboard}
+        onClose={closeLeaderboard}
+        highlightRank={newEntryRank}
+      />
+
+      {/* ── Name Prompt (shown on new high-score game-over) ───────────── */}
+      <InitialsPrompt
+        score={gameState.score}
+        level={gameState.level}
+        lines={gameState.lines}
+        isOpen={promptingInitials}
+        onSubmit={handleInitialsSubmit}
+      />
     </div>
   )
 }
