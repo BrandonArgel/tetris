@@ -156,7 +156,7 @@ export function GameOverlay({ status, score, onStart, onPause }: GameOverlayProp
             {status === 'gameover' && (
                 <div className="flex flex-col items-center gap-5 animate-fade-in-bounce">
                     <h2
-                        className="text-4xl font-black tracking-widest text-red-500"
+                        className="text-4xl font-black tracking-widest text-red-500 text-center"
                         style={{ textShadow: '0 0 24px #f00000cc' }}
                     >
                         GAME OVER
