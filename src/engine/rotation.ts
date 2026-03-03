@@ -6,12 +6,31 @@ import { isValidPosition } from './collision'
  * Uses the standard transpose-then-reverse-rows algorithm.
  */
 export function rotateMatrix(matrix: Matrix): Matrix {
+    console.log('rotateMatrix', matrix)
     const rows = matrix.length
     const cols = matrix[0].length
     const rotated: Matrix = Array.from({ length: cols }, () => Array(rows).fill(0))
     for (let r = 0; r < rows; r++) {
         for (let c = 0; c < cols; c++) {
             rotated[c][rows - 1 - r] = matrix[r][c]
+        }
+    }
+    return rotated
+}
+
+/**
+ * Rotates a matrix 90° counter-clockwise.
+ * Uses the standard transpose-then-reverse-rows algorithm.
+ */
+export function rotateMatrixCCW(matrix: Matrix): Matrix {
+    console.log('rotateMatrixCCW', matrix)
+    const rows = matrix.length
+    const cols = matrix[0].length
+    const rotated: Matrix = Array.from({ length: cols }, () => Array(rows).fill(0))
+
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            rotated[cols - 1 - c][r] = matrix[r][c]
         }
     }
     return rotated
@@ -35,6 +54,17 @@ export function rotatePiece(piece: Piece, board: BoardState): Piece {
             return { ...piece, matrix: rotated, x: piece.x + dx }
         }
     }
+    return piece // rotation not possible
+}
+
+export function rotatePieceCCW(piece: Piece, board: BoardState): Piece {
+    const rotated = rotateMatrixCCW(piece.matrix)
+    for (const dx of KICK_OFFSETS) {
+        if (isValidPosition(board, rotated, piece.x + dx, piece.y)) {
+            return { ...piece, matrix: rotated, x: piece.x + dx }
+        }
+    }
+
     return piece // rotation not possible
 }
 

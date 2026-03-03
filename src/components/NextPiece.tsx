@@ -25,11 +25,11 @@ export const NextPiece = memo(function NextPiece({ piece }: NextPieceProps) {
     }
 
     return (
-        <div className="inline-grid grid-cols-4 gap-0.5 rounded-md bg-gray-950 p-2">
+        <div className="grid grid-cols-4 gap-0.5 rounded-md bg-gray-950 p-2 w-20 md:w-24 mx-auto">
             {grid.flat().map((cell, i) => (
                 <div
                     key={i}
-                    className="h-5 w-5 rounded-sm"
+                    className="w-full aspect-square rounded-sm"
                     style={
                         cell
                             ? {
@@ -43,3 +43,14 @@ export const NextPiece = memo(function NextPiece({ piece }: NextPieceProps) {
         </div>
     )
 })
+
+export function NextPieceContainer({ piece }: NextPieceProps) {
+    return (
+        <div className="flex w-full min-w-[72px] flex-col items-center gap-1 rounded-lg border border-cyan-500/50 bg-gray-950/80 px-2 py-2 backdrop-blur-md shadow-[0_0_15px_rgba(0,240,255,0.15)] shrink-0">
+            <span className="text-[10px] font-mono tracking-[0.2em] text-cyan-400/80 uppercase">Next</span>
+            <div className="flex items-center justify-center pt-1">
+                <NextPiece piece={piece} />
+            </div>
+        </div>
+    )
+}

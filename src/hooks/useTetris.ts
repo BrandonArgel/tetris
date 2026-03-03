@@ -112,7 +112,12 @@ export function useTetris({ playSound }: TetrisOptions = {}): TetrisAPI {
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
-            const action = KEY_MAP[e.key]
+            let action = KEY_MAP[e.key]
+
+            if (e.key === 'ArrowUp' && e.shiftKey) {
+                action = 'rotateCCW'
+            }
+
             if (!action) return
 
             if (['ArrowLeft', 'ArrowDown', 'ArrowRight', 'ArrowUp', ' '].includes(e.key)) {
@@ -141,6 +146,10 @@ export function useTetris({ playSound }: TetrisOptions = {}): TetrisAPI {
                     break
                 case 'rotate':
                     next = engine.rotate()
+                    sound = 'rotate'
+                    break
+                case 'rotateCCW':
+                    next = engine.rotateCCW()
                     sound = 'rotate'
                     break
                 case 'pause':
@@ -220,6 +229,11 @@ export function createGamepadActions(
         rotate: () => {
             if (stateRef.current?.status !== 'playing') return
             const next = engineRef.current?.rotate()
+            if (next) { pushState(next); playSoundRef.current?.('rotate') }
+        },
+        rotateCCW: () => {
+            if (stateRef.current?.status !== 'playing') return
+            const next = engineRef.current?.rotateCCW()
             if (next) { pushState(next); playSoundRef.current?.('rotate') }
         },
         softDrop: () => {

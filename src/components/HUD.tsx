@@ -12,11 +12,13 @@ interface StatBlockProps {
 
 function StatBlock({ label, value, color }: StatBlockProps) {
     return (
-        <div className="flex flex-col items-center gap-1 rounded-lg border border-white/10 bg-gray-900/80 px-4 py-3 backdrop-blur-sm">
-            <span className="text-xs font-semibold tracking-[0.2em] text-gray-400 uppercase">{label}</span>
+        <div className="flex w-full min-w-[72px] flex-col items-center gap-1 rounded-lg border border-cyan-500/50 bg-gray-950/80 px-2 py-2 backdrop-blur-md shadow-[0_0_15px_rgba(0,240,255,0.15)] shrink-0">
+            <span className="text-[10px] font-mono tracking-[0.2em] text-cyan-400/80 uppercase">
+                {label}
+            </span>
             <span
-                className="font-mono text-2xl font-bold tabular-nums"
-                style={{ color, textShadow: `0 0 12px ${color}99` }}
+                className="font-mono text-xl font-bold tabular-nums"
+                style={{ color, textShadow: `0 0 10px ${color}99` }}
             >
                 {value.toLocaleString()}
             </span>

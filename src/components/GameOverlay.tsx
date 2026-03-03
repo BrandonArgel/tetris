@@ -8,7 +8,6 @@ import {
     ArrowUp,
     ArrowDown,
     ChevronsDown,
-    Hand,
     RotateCcw,
 } from 'lucide-react'
 
@@ -28,8 +27,8 @@ const KeyboardHints = () => (
         </p>
         {[
             { icons: [ArrowLeft, ArrowRight], label: 'Move' },
-            { icons: [ArrowUp], label: 'Rotate' },
             { icons: [ArrowDown], label: 'Soft Drop' },
+            { icons: [ArrowUp], label: 'Rotate' },
         ].map(({ icons, label }) => (
             <div key={label} className="flex items-center gap-2">
                 <div className="flex gap-1">
@@ -45,6 +44,12 @@ const KeyboardHints = () => (
                 <span className="text-xs text-gray-400">{label}</span>
             </div>
         ))}
+        <div className="flex items-center gap-2">
+            <span className="inline-flex h-6 items-center justify-center rounded border border-white/20 bg-white/8 px-2 text-[9px] font-bold tracking-widest text-gray-300 uppercase">
+                <ArrowUp size={11} strokeWidth={2.5} /> + Shift
+            </span>
+            <span className="text-xs text-gray-400">Rotate CCW</span>
+        </div>
         {/* Space bar */}
         <div className="flex items-center gap-2">
             <span className="inline-flex h-6 items-center justify-center rounded border border-white/20 bg-white/8 px-2 text-[9px] font-bold tracking-widest text-gray-300 uppercase">
@@ -57,6 +62,12 @@ const KeyboardHints = () => (
                 Esc / P
             </span>
             <span className="text-xs text-gray-400">Pause</span>
+        </div>
+        <div className="flex items-center gap-2">
+            <span className="inline-flex h-6 items-center justify-center rounded border border-white/20 bg-white/8 px-2 text-[9px] font-bold tracking-widest text-gray-300 uppercase">
+                Enter
+            </span>
+            <span className="text-xs text-gray-400">Start</span>
         </div>
     </div>
 )
@@ -71,7 +82,6 @@ const TouchHints = () => (
             { Icon: RotateCcw, label: 'Tap ↑  Rotate' },
             { Icon: ArrowDown, label: 'Tap ↓  Soft Drop' },
             { Icon: ChevronsDown, label: '▲  Hard Drop' },
-            { Icon: Hand, label: 'Swipe also works' },
         ].map(({ Icon, label }) => (
             <div key={label} className="flex items-center gap-2">
                 <span className="inline-flex h-6 w-6 items-center justify-center rounded border border-white/20 bg-white/8 text-gray-300">
@@ -113,19 +123,7 @@ export function GameOverlay({ status, score, onStart, onPause }: GameOverlayProp
 
                     {/* Controls guide */}
                     <div className="flex gap-6 rounded-xl border border-white/8 bg-white/3 px-5 py-4">
-                        <KeyboardHints />
-                        {isTouch && (
-                            <>
-                                <div className="w-px bg-white/10" />
-                                <TouchHints />
-                            </>
-                        )}
-                        {!isTouch && (
-                            <>
-                                <div className="w-px bg-white/10" />
-                                <TouchHints />
-                            </>
-                        )}
+                        {isTouch ? <TouchHints /> : <KeyboardHints />}
                     </div>
                 </div>
             )}

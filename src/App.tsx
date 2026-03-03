@@ -22,8 +22,15 @@ import { useIsTouchDevice } from '@/hooks/useIsTouchDevice'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function dispatchKey(key: string): void {
-  window.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true }))
+function dispatchKey(key: string, options: KeyboardEventInit = {}): void {
+  window.dispatchEvent(
+    new KeyboardEvent('keydown', {
+      key,
+      bubbles: true,
+      cancelable: true,
+      ...options
+    })
+  )
 }
 
 // ─── App ──────────────────────────────────────────────────────────────────────
@@ -63,8 +70,7 @@ export default function App() {
     if (gameState.status === 'gameover' && leaderboard.isHighScore(gameState.score)) {
       setPromptingInitials(true)
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [gameState.status])          // intentionally only re-runs on status change
+  }, [gameState.status])
 
   // ── Handle name submission ────────────────────────────────────────────────
 
@@ -127,6 +133,7 @@ export default function App() {
     moveLeft: useCallback(() => dispatchKey('ArrowLeft'), []),
     moveRight: useCallback(() => dispatchKey('ArrowRight'), []),
     rotate: useCallback(() => dispatchKey('ArrowUp'), []),
+    rotateCCW: useCallback(() => dispatchKey('ArrowUp', { shiftKey: true }), []),
     softDrop: useCallback(() => dispatchKey('ArrowDown'), []),
     hardDrop: useCallback(() => dispatchKey(' '), []),
   }
@@ -147,7 +154,7 @@ export default function App() {
   )
 
   return (
-    <div className="flex h-[100dvh] w-full flex-col overflow-hidden bg-gray-950 font-sans">
+    <div className="flex items-center justify-center h-[100dvh] w-full flex-col overflow-hidden bg-gray-950 font-sans">
 
       {/* Ambient glows */}
       <div className="pointer-events-none fixed inset-0 overflow-hidden">
@@ -158,29 +165,36 @@ export default function App() {
       {showGamepad ? (
         // ── MOBILE ───────────────────────────────────────────────────────────
         <>
-          {/* Header */}
           <header
-            className="relative z-10 flex shrink-0 items-center justify-between px-4 py-2"
+            className="w-full relative z-10 flex shrink-0 items-center justify-between px-4 py-2"
             style={{ background: 'rgba(3,7,18,0.9)', minHeight: 48 }}
           >
-            <div className="flex flex-col items-start">
-              <span className="text-[10px] font-semibold tracking-widest text-gray-500 uppercase">Score</span>
-              <span className="font-mono text-sm font-bold text-cyan-400">
-                {gameState.score.toLocaleString()}
-              </span>
+            <div className="flex gap-4">
+              <div className="flex flex-col items-start">
+                <span className="text-[10px] font-semibold tracking-widest text-violet-400/80 uppercase">Level</span>
+                <span className="font-mono text-sm font-bold text-violet-400">
+                  {String(gameState.level).padStart(2, '0')}
+                </span>
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-[10px] font-semibold tracking-widest text-cyan-400/80 uppercase">Score</span>
+                <span className="font-mono text-sm font-bold text-cyan-400">
+                  {String(gameState.score).padStart(7, '0')}
+                </span>
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-[10px] font-semibold tracking-widest text-lime-400/80 uppercase">Lines</span>
+                <span className="font-mono text-sm font-bold text-lime-400">
+                  {String(gameState.lines).padStart(4, '0')}
+                </span>
+              </div>
             </div>
 
-            <span
-              className="text-base font-black tracking-[0.3em] text-cyan-400"
-              style={{ textShadow: '0 0 10px #00f0ff88' }}
-            >
-              TETRIS
-            </span>
+            <div className="flex flex-col items-center">
+              <NextPiece piece={gameState.nextPiece} />
+            </div>
 
             <div className="flex items-center gap-1">
-              <span className="text-[10px] font-semibold tracking-widest text-gray-500 uppercase">
-                LV {gameState.level}
-              </span>
               <TrophyButton id="trophy-btn-mobile" />
               {isGameInProgress && (
                 <Button
@@ -209,14 +223,18 @@ export default function App() {
                   : <Volume2 size={16} strokeWidth={2.5} />}
               </Button>
             </div>
+
           </header>
 
-          {/* Board — fills remaining space between header and gamepad */}
-          <main className="relative flex-1 min-h-0 flex items-center justify-center p-2">
-            <div className="relative flex h-full max-h-full aspect-[10/20] items-center justify-center">
+          {/* Main Content Area — 2 Column Asymmetric Grid with Unified HUD */}
+          <main className="relative flex-1 min-h-0 overflow-hidden px-2 py-4 items-center justify-center">
+
+            {/* Left Column: The Board */}
+            <div className="col-start-1 relative flex h-full max-h-full aspect-[10/20] object-contain origin-left flex-shrink-0 flex justify-center items-center">
               <Board board={visualBoard} clearingRows={gameState.clearingRows} />
               <GameOverlay status={gameState.status} score={gameState.score} onStart={startGame} onPause={togglePause} />
             </div>
+
           </main>
 
           <MobileGamepad actions={gamepadActions} isPaused={isPaused} />

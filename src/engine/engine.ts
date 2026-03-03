@@ -1,7 +1,7 @@
 import type { BoardState, GameState } from './types'
 import { createBoard, stampPiece, clearLines, getFullRowIndices } from './board'
 import { isValidPosition } from './collision'
-import { rotatePiece as _rotatePiece, computeGhostY } from './rotation'
+import { rotatePiece as _rotatePiece, rotatePieceCCW as _rotatePieceCCW, computeGhostY } from './rotation'
 import { computeScore, levelFromLines } from './scoring'
 import { createPiece, nextFromBag, resetBag } from './tetrominoes'
 
@@ -174,6 +174,14 @@ export class GameEngine {
     rotate(): GameState {
         if (this.state.status !== 'playing' || !this.state.activePiece) return this.state
         const rotated = _rotatePiece(this.state.activePiece, this.state.board)
+        const ghostY = computeGhostY(this.state.board, rotated.matrix, rotated.x, rotated.y)
+        this.state = { ...this.state, activePiece: rotated, ghostY }
+        return this.state
+    }
+
+    rotateCCW(): GameState {
+        if (this.state.status !== 'playing' || !this.state.activePiece) return this.state
+        const rotated = _rotatePieceCCW(this.state.activePiece, this.state.board)
         const ghostY = computeGhostY(this.state.board, rotated.matrix, rotated.x, rotated.y)
         this.state = { ...this.state, activePiece: rotated, ghostY }
         return this.state

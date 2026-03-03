@@ -15,6 +15,7 @@ export interface GamepadActions {
     moveLeft: () => void
     moveRight: () => void
     rotate: () => void
+    rotateCCW: () => void
     softDrop: () => void
     hardDrop: () => void
 }
@@ -44,7 +45,6 @@ const GamepadButton = memo(function GamepadButton({
     label,
     onAction,
     variant = 'gamepad',
-    sizePx = 60,
     className,
     disabled,
     style,
@@ -76,7 +76,7 @@ const GamepadButton = memo(function GamepadButton({
             size="icon"
             aria-label={label}
             className={cn('gamepad-btn active:scale-90 rounded-xl', className)}
-            style={{ width: sizePx, height: sizePx, touchAction: 'none', ...style }}
+            style={{ touchAction: 'none', ...style }}
             onTouchStart={handleTouchStart}
             onPointerDown={handlePointerDown}
             onContextMenu={e => e.preventDefault()}
@@ -104,12 +104,9 @@ export const MobileGamepad = memo(function MobileGamepad({
     actions,
     isPaused,
 }: MobileGamepadProps) {
-    const BTN = 60   // px — button size
-    const GAP = 8    // px — gap between buttons
-
     return (
         <div
-            className="w-full shrink-0 z-20 flex items-end justify-between px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-3"
+            className="w-full max-w-sm mx-auto shrink-0 z-20 flex items-end justify-between px-5 pb-[max(env(safe-area-inset-bottom),16px)] pt-3 h-auto max-h-[25vh]"
             style={{ background: 'linear-gradient(to top, rgba(3,7,18,0.98) 60%, transparent)' }}
         >
             {/* ── Left cluster: D-pad ─────────────────────────────────────── */}
@@ -119,23 +116,15 @@ export const MobileGamepad = memo(function MobileGamepad({
              *  [ ← ]    [    ]  [ → ]
              *  [    ]   [ ↓  ]  [   ]
              */}
-            <div
-                className="grid"
-                style={{
-                    gridTemplateColumns: `repeat(3, ${BTN}px)`,
-                    gridTemplateRows: `repeat(2, ${BTN}px)`,
-                    gap: GAP,
-                }}
-            >
+            <div className="grid grid-cols-3 grid-rows-2 gap-2">
                 {/* Left  — row 1, col 1 */}
                 <GamepadButton
                     id="gp-left"
                     icon={<ArrowLeft size={22} strokeWidth={2.5} />}
                     label="Move left"
                     onAction={actions.moveLeft}
-                    sizePx={BTN}
                     disabled={isPaused}
-                    className="[grid-area:1/1]"
+                    className="col-start-1 row-start-1 w-14 h-14 sm:w-16 sm:h-16"
                 />
 
                 {/* Right — row 1, col 3 */}
@@ -144,9 +133,8 @@ export const MobileGamepad = memo(function MobileGamepad({
                     icon={<ArrowRight size={22} strokeWidth={2.5} />}
                     label="Move right"
                     onAction={actions.moveRight}
-                    sizePx={BTN}
                     disabled={isPaused}
-                    className="[grid-area:1/3]"
+                    className="col-start-3 row-start-1 w-14 h-14 sm:w-16 sm:h-16"
                 />
 
                 {/* Down (Soft Drop) — row 2, col 2 */}
@@ -155,9 +143,8 @@ export const MobileGamepad = memo(function MobileGamepad({
                     icon={<ArrowDown size={22} strokeWidth={2.5} />}
                     label="Soft drop"
                     onAction={actions.softDrop}
-                    sizePx={BTN}
                     disabled={isPaused}
-                    className="[grid-area:2/2]"
+                    className="col-start-2 row-start-2 w-14 h-14 sm:w-16 sm:h-16"
                 />
             </div>
 
@@ -168,14 +155,7 @@ export const MobileGamepad = memo(function MobileGamepad({
              *  [        ]        [ ↻ Rotate ]
              *  [ ⬇ Hard Drop (col-span 2)   ]
              */}
-            <div
-                className="grid"
-                style={{
-                    gridTemplateColumns: `repeat(2, ${BTN}px)`,
-                    gridTemplateRows: `repeat(2, ${BTN}px)`,
-                    gap: GAP,
-                }}
-            >
+            <div className="grid grid-cols-2 grid-rows-2 gap-2">
                 {/* Rotate — row 1, col 2 (right-hand, natural thumb reach) */}
                 <GamepadButton
                     id="gp-rotate"
@@ -183,23 +163,31 @@ export const MobileGamepad = memo(function MobileGamepad({
                     label="Rotate"
                     onAction={actions.rotate}
                     variant="gamepad-action"
-                    sizePx={BTN}
                     disabled={isPaused}
-                    className="[grid-area:1/2]"
+                    className="col-start-1 row-start-1 w-14 h-14 sm:w-16 sm:h-16"
+                />
+
+                {/* Rotate CCW — row 1, col 1 (left-hand, natural thumb reach) */}
+                <GamepadButton
+                    id="gp-rotate-ccw"
+                    icon={<RefreshCw size={22} strokeWidth={2.5} />}
+                    label="Rotate CCW"
+                    onAction={actions.rotateCCW}
+                    variant="gamepad-action"
+                    disabled={isPaused}
+                    className="col-start-2 row-start-1 w-14 h-14 sm:w-16 sm:h-16 rotate-x-180"
                 />
 
                 {/* Hard Drop — row 2, spans both columns (wide target) */}
-                <div className="[grid-area:2/1/3/3]">
+                <div className="col-span-2 row-start-2">
                     <GamepadButton
                         id="gp-harddrop"
                         icon={<ChevronsDown size={22} strokeWidth={2.5} />}
                         label="Hard drop"
                         onAction={actions.hardDrop}
                         variant="gamepad-primary"
-                        sizePx={BTN}
                         disabled={isPaused}
-                        className="w-full rounded-xl"
-                        style={{ width: BTN * 2 + GAP, height: BTN } as React.CSSProperties}
+                        className="w-full h-14 sm:h-16 rounded-xl"
                     />
                 </div>
             </div>
